@@ -1,0 +1,6 @@
+interface:
+  display_name: "Markdown Platform Publisher"
+  short_description: "Publish Markdown images via GitHub CDN"
+  default_prompt: "Use $markdown-platform-publisher to turn this Markdown article into a platform-ready blog post with GitHub-hosted HTTPS image links."
+policy:
+  allow_implicit_invocation: true

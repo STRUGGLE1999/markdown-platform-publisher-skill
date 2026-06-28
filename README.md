@@ -1,207 +1,172 @@
 # Markdown Platform Publisher Skill
 
-`markdown-platform-publisher` 是一个 Codex Skill，用来把带有本地图片的 Markdown 教程、博客或文档转换成适合 CSDN、掘金、知乎、博客园、微信公众号编辑器等平台导入的发布版 Markdown。
+`markdown-platform-publisher` turns Markdown articles that contain local images into platform-ready Markdown for CSDN, Juejin, Zhihu, BlogCN, WeChat editors, and similar platforms.
 
-它会自动扫描 Markdown 里的本地图片，上传到公开 GitHub 图床仓库，通过 jsDelivr 生成 HTTPS 图片链接，然后回写 Markdown，输出一份 `（平台发布版）.md`。
+The default workflow uses **PicList's local HTTP server** to upload images to the image host currently configured in PicList, such as **Cloudflare R2**, then rewrites local image paths into public HTTPS image URLs.
 
-## 适合解决什么问题
+It is designed for the common CSDN problem where Markdown imports fail with external image transfer errors when images are local paths or unstable GitHub/jsDelivr links.
 
-很多博客平台导入 Markdown 时，只能正常显示文字，图片会因为仍然是本地路径而转存失败，例如：
+## What It Does
 
-```md
-![截图](image.png)
-![步骤图](image%201.png)
-```
-
-这个 Skill 会把它们改成平台可访问的 HTTPS 图片链接：
-
-```md
-![截图](https://cdn.jsdelivr.net/gh/yourname/blog-assets@commit/articles/article-slug/01-screenshot.png)
-```
-
-## 核心功能
-
-- 扫描 Markdown 图片：`![alt](image.png)`
-- 扫描 HTML 图片：`<img src="image.png">`
-- 支持 URL 编码路径：`image%201.png`
-- 跳过已有远程图片：`https://...`、`data:` 等
-- 上传图片到公开 GitHub 仓库
-- 使用 jsDelivr 生成 HTTPS 图片链接
-- 使用 commit hash 固定资源版本，而不是不稳定的 `@main`
-- 生成平台发布版 Markdown
-- 生成图片映射表和发布报告
-- 可选 HTTP 检查生成的图片链接是否可访问
-
-## 触发方式
-
-在 Codex 里可以这样说：
+- Scans Markdown images: `![alt](image.png)`
+- Scans HTML images: `<img src="image.png">`
+- Skips remote images such as `https://...`, `data:`, and protocol-relative URLs
+- Skips fenced code block examples and placeholders such as `{{image}}`
+- Uploads real local images through PicList
+- Creates one remote folder per article, for example:
 
 ```text
-把这篇文章输出为支持 CSDN 的博客
+articles/coze-multi-platform-copywriting-assistant-blog-1/
 ```
 
-也可以这样说：
+- Stages images with ASCII filenames before upload, avoiding URL mojibake from Chinese filenames
+- Generates a CSDN-ready Markdown file with HTTPS image links
+- Generates `.image-map.json` and `.publish-report.json`
+- Can verify returned public image URLs with HTTP checks
+
+## Requirements
+
+1. Install and configure PicList.
+2. Configure a PicList uploader, for example Cloudflare R2 through the S3-compatible uploader.
+3. Enable PicList's built-in server.
+4. Know your PicList upload endpoint and final public image URL prefix.
+
+Typical PicList endpoint:
 
 ```text
-生成 CSDN 发布版 md
+http://127.0.0.1:36677/upload
 ```
+
+Typical Cloudflare R2 public URL prefix:
 
 ```text
-把 Markdown 里的本地图片换成 HTTPS 图床链接
+https://pub-xxxx.r2.dev
 ```
+
+Do not use a Cloudflare dashboard URL as the public URL. Use the actual public R2 URL or custom domain that browsers and CSDN can access.
+
+## Basic Usage
+
+```powershell
+python scripts\publish_markdown_piclist.py --input "D:\path\to\article.md" --expected-url-prefix "https://pub-xxxx.r2.dev" --check-links --keep-staged
+```
+
+Successful output looks like:
+
+```json
+{
+  "asset_prefix": "articles/my-article-slug/",
+  "unique_assets": 4,
+  "validation": {
+    "original_local_image_refs": 4,
+    "rewritten_remote_refs": 4,
+    "remaining_local_image_refs": 0
+  }
+}
+```
+
+Generated files:
 
 ```text
-做一份可导入 CSDN / 掘金 / 知乎的版本
+article（PicList发布版）.md
+article（PicList发布版）.image-map.json
+article（PicList发布版）.publish-report.json
+article（PicList发布版）.piclist-staged/
 ```
+
+The staged folder is kept when `--keep-staged` is used. It shows the ASCII filenames that were uploaded.
+
+## Per-Article Folders
+
+By default, the script derives an English slug from the Markdown filename and temporarily sets PicList's `uploadPath` to:
 
 ```text
-把这篇博文整理成各平台可发布版本
+articles/<slug>/
 ```
 
-英文也可以：
+Example input filename:
 
 ```text
-make this markdown ready for CSDN
+Coze多平台文案创作助手博客 - 1.md
 ```
+
+Example remote path:
 
 ```text
-convert local markdown images to jsDelivr links
+articles/coze-multi-platform-copywriting-assistant-blog-1/
 ```
 
-## 使用前准备
+You can override it explicitly:
 
-你需要准备一个**公开 GitHub 仓库**作为图片资源仓库，例如：
+```powershell
+python scripts\publish_markdown_piclist.py --input "D:\path\to\article.md" --slug "my-custom-article" --expected-url-prefix "https://pub-xxxx.r2.dev" --check-links --keep-staged
+```
+
+The script restores the original PicList config after upload, even if an upload fails.
+
+## API-Key Protected PicList Server
+
+If your PicList server uses an API key:
+
+```powershell
+python scripts\publish_markdown_piclist.py --input "D:\path\to\article.md" --endpoint "http://127.0.0.1:36677/upload?key=YOUR_KEY" --expected-url-prefix "https://pub-xxxx.r2.dev" --check-links --keep-staged
+```
+
+## Options
 
 ```text
-yourname/blog-assets
+--input                 Input Markdown file.
+--output                Output Markdown file. Defaults to <name>（PicList发布版）.md.
+--endpoint              PicList upload endpoint. Default: http://127.0.0.1:36677/upload.
+--asset-root            Remote root path. Default: articles.
+--slug                  Article directory name under --asset-root.
+--piclist-config        PicList data.json path. Defaults to %APPDATA%\piclist\data.json on Windows.
+--no-set-upload-path    Do not change PicList uploadPath; use current PicList config.
+--expected-url-prefix   Expected public image URL prefix, for example https://pub-xxxx.r2.dev.
+--check-links           Check returned public image URLs after upload.
+--timeout               Upload/check timeout per image. Default: 120 seconds.
+--keep-staged           Keep staged ASCII-named upload files next to the output.
 ```
 
-仓库必须公开，否则 jsDelivr 无法访问图片。
+## Codex Usage
 
-本机还需要能通过 Git 推送到这个仓库。也就是说，你需要已经配置好 GitHub 登录凭据、SSH key 或 HTTPS token。
-
-## Codex 中的典型用法
-
-如果你已经安装了这个 Skill，可以直接对 Codex 说：
+After installing this skill, you can ask Codex directly:
 
 ```text
-把 /path/to/article.md 输出为支持 CSDN 的博客，图片仓库用 yourname/blog-assets
+把这个 md 文档转成 CSDN 可导入的 Markdown，图片走 PicList/R2 图床。
 ```
 
-如果没有指定仓库，Codex 会要求你提供一个公开 GitHub 仓库地址，例如：
+Provide:
 
-```text
-https://github.com/yourname/blog-assets
+- the Markdown file path
+- the PicList local upload endpoint, if it is not the default
+- the final R2 public URL prefix
+
+Codex will run the script, verify the result, and return the generated Markdown path.
+
+## GitHub/jsDelivr Fallback
+
+The old GitHub workflow is still available for users who explicitly want it:
+
+```powershell
+python scripts\publish_markdown.py --input "D:\path\to\article.md" --repo "owner/blog-assets"
 ```
 
-## 命令行用法
+However, PicList/R2 is recommended for CSDN imports because GitHub/jsDelivr external image transfer can be unreliable.
 
-Skill 内置脚本：
+## Troubleshooting
 
-```bash
-python3 scripts/publish_markdown.py \
-  --input "/path/to/article.md" \
-  --repo "yourname/blog-assets" \
-  --check-links
-```
+If PicList is not reachable:
 
-运行成功后会生成：
+- Open PicList.
+- Enable the built-in server.
+- Confirm the server port, usually `36677`.
 
-```text
-article（平台发布版）.md
-article（平台发布版）.image-map.json
-article（平台发布版）.publish-report.json
-```
+If upload fails:
 
-## 参数说明
+- Check PicList's selected uploader.
+- Check Cloudflare R2 credentials and bucket settings.
+- Check the public URL prefix.
+- Inspect PicList logs, usually at `%APPDATA%\piclist\piclist.log` on Windows.
 
-```bash
---input
-```
-
-输入 Markdown 文件路径。
-
-```bash
---repo
-```
-
-公开 GitHub 图片仓库，支持以下格式：
-
-```text
-owner/repo
-https://github.com/owner/repo
-https://github.com/owner/repo.git
-```
-
-```bash
---output
-```
-
-指定输出 Markdown 文件。不填时默认输出：
-
-```text
-<原文件名>（平台发布版）.md
-```
-
-```bash
---slug
-```
-
-指定图片在仓库中的文章目录名。不填时根据 Markdown 文件名自动生成。
-
-```bash
---check-links
-```
-
-上传后抽查生成的 jsDelivr 图片链接是否可访问。
-
-```bash
---dry-run
-```
-
-只测试扫描和回写逻辑，不克隆仓库、不提交、不推送。
-
-## 输出示例
-
-原始 Markdown：
-
-```md
-![安装 PPT Skill](image%205.png)
-```
-
-转换后：
-
-```md
-![安装 PPT Skill](https://cdn.jsdelivr.net/gh/yourname/blog-assets@2696885/articles/codex-ppt-skill/06-install-ppt-skill.png)
-```
-
-## 安装方式
-
-可以让 Codex 使用 `skill-installer` 从 GitHub 安装：
-
-```text
-帮我安装 https://github.com/STRUGGLE1999/markdown-platform-publisher-skill 这个 Skill
-```
-
-安装后重启 Codex，让新 Skill 生效。
-
-## 注意事项
-
-- GitHub 仓库必须公开。
-- 图片会被上传到 GitHub，不能放隐私或敏感截图。
-- jsDelivr 偶尔会有短暂缓存延迟，刚推送后可能需要等一会儿。
-- 如果 Git push 失败，请检查 GitHub 权限、本机凭据和仓库地址。
-- 这个 Skill 只生成平台发布版 Markdown，不会自动替你发布到 CSDN 或其他平台，除非你另外明确要求。
-
-## 目录结构
-
-```text
-markdown-platform-publisher/
-├── SKILL.md
-├── README.md
-├── agents/
-│   └── openai.yaml
-└── scripts/
-    └── publish_markdown.py
-```
-
+If generated image URLs do not open in a browser, do not import the Markdown into CSDN yet. Fix R2 public access or PicList custom URL settings first.

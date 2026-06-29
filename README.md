@@ -45,6 +45,12 @@ https://pub-xxxx.r2.dev
 
 Do not use a Cloudflare dashboard URL as the public URL. Use the actual public R2 URL or custom domain that browsers and CSDN can access.
 
+For a step-by-step Windows setup guide, see:
+
+```text
+docs/cloudflare-r2-piclist-setup.md
+```
+
 ## Basic Usage
 
 ```powershell

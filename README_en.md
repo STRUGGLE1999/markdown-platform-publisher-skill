@@ -1,6 +1,6 @@
 # Markdown Platform Publisher Skill
 
-[中文](README.md)
+[中文](README.md) | English
 
 `markdown-platform-publisher` turns Markdown articles that contain local images into platform-ready Markdown for CSDN, Juejin, Zhihu, BlogCN, WeChat editors, and similar platforms.
 

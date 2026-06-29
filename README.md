@@ -1,6 +1,6 @@
 # Markdown Platform Publisher Skill
 
-默认文档语言：中文。English version: [README_en.md](README_en.md)
+[English](README_en.md)
 
 `markdown-platform-publisher` 是一个用于把带本地图片的 Markdown 文章转换成平台可导入版本的 Codex Skill，适合发布到 CSDN、掘金、知乎、博客园、微信公众号编辑器等平台。
 

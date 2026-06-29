@@ -1,6 +1,6 @@
 # Markdown Platform Publisher Skill
 
-Default documentation language is Chinese. 中文版: [README.md](README.md)
+[中文](README.md)
 
 `markdown-platform-publisher` turns Markdown articles that contain local images into platform-ready Markdown for CSDN, Juejin, Zhihu, BlogCN, WeChat editors, and similar platforms.
 

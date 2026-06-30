@@ -17,6 +17,14 @@ Default PicList endpoint:
 http://127.0.0.1:36677/upload
 ```
 
+Default PicList config paths are auto-detected by platform:
+
+```text
+macOS:   ~/Library/Application Support/piclist/data.json
+Windows: %APPDATA%\piclist\data.json
+Linux:   ~/.config/piclist/data.json
+```
+
 The user should provide or confirm the final public image URL prefix, for example:
 
 ```text
@@ -126,6 +134,12 @@ If PicList returns `success: false`, read the latest PicList log. On Windows, th
 
 ```text
 %APPDATA%\piclist\piclist.log
+```
+
+On macOS, the default PicList config/log directory is:
+
+```text
+~/Library/Application Support/piclist/
 ```
 
 Report the exact error and ask the user to confirm PicList's selected uploader, Cloudflare R2 credentials, bucket, path, endpoint, and custom public URL.

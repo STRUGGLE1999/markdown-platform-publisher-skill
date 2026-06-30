@@ -53,8 +53,16 @@ Cloudflare R2 + PicList 的 Windows 配置教程见：
 
 ## 基础用法
 
+Windows：
+
 ```powershell
 python scripts\publish_markdown_piclist.py --input "D:\path\to\article.md" --expected-url-prefix "https://pub-xxxx.r2.dev" --check-links --keep-staged
+```
+
+macOS / Linux：
+
+```bash
+python scripts/publish_markdown_piclist.py --input "/path/to/article.md" --expected-url-prefix "https://pub-xxxx.r2.dev" --check-links --keep-staged
 ```
 
 成功后会输出类似结果：
@@ -126,7 +134,10 @@ python scripts\publish_markdown_piclist.py --input "D:\path\to\article.md" --end
 --endpoint              PicList 上传接口，默认 http://127.0.0.1:36677/upload。
 --asset-root            远程根目录，默认 articles。
 --slug                  文章目录名，位于 --asset-root 下。
---piclist-config        PicList data.json 路径，Windows 默认读取 %APPDATA%\piclist\data.json。
+--piclist-config        PicList data.json 路径。默认会按系统自动探测：
+                        macOS: ~/Library/Application Support/piclist/data.json
+                        Windows: %APPDATA%\piclist\data.json
+                        Linux: ~/.config/piclist/data.json
 --no-set-upload-path    不修改 PicList uploadPath，直接使用当前 PicList 配置。
 --expected-url-prefix   期望的公开图片 URL 前缀，例如 https://pub-xxxx.r2.dev。
 --check-links           上传后检查公开图片链接是否可访问。
@@ -173,6 +184,9 @@ python scripts\publish_markdown.py --input "D:\path\to\article.md" --repo "owner
 - 检查 PicList 当前选择的图床。
 - 检查 Cloudflare R2 的 Access Key、Secret Key、Bucket、Endpoint。
 - 检查 R2 公开访问域名是否正确。
-- 查看 PicList 日志，Windows 通常在 `%APPDATA%\piclist\piclist.log`。
+- 查看 PicList 日志：
+  - macOS 通常在 `~/Library/Application Support/piclist/`
+  - Windows 通常在 `%APPDATA%\piclist\`
+  - Linux 通常在 `~/.config/piclist/`
 
 如果生成后的图片链接在浏览器里打不开，先不要导入 CSDN。需要先修好 R2 公开访问或 PicList 自定义域名配置。

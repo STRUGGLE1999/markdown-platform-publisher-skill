@@ -74,10 +74,29 @@ def normalize_prefix(value: str) -> str:
 
 
 def default_piclist_config_path() -> Path:
+    candidates: list[Path] = []
+
     appdata = os.environ.get("APPDATA")
     if appdata:
-        return Path(appdata) / "piclist" / "data.json"
-    return Path.home() / "AppData" / "Roaming" / "piclist" / "data.json"
+        candidates.append(Path(appdata) / "piclist" / "data.json")
+
+    xdg_config_home = os.environ.get("XDG_CONFIG_HOME")
+    if xdg_config_home:
+        candidates.append(Path(xdg_config_home) / "piclist" / "data.json")
+
+    home = Path.home()
+    candidates.extend(
+        [
+            home / "Library" / "Application Support" / "piclist" / "data.json",
+            home / ".config" / "piclist" / "data.json",
+            home / "AppData" / "Roaming" / "piclist" / "data.json",
+        ]
+    )
+
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0]
 
 
 def strip_wrapping(url: str) -> str:

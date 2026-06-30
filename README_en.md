@@ -47,14 +47,22 @@ https://pub-xxxx.r2.dev
 
 Do not use a Cloudflare dashboard URL as the public URL. Use the actual public R2 URL or custom domain that browsers and CSDN can access.
 
-Windows setup guide:
+Setup guide:
 
 [Cloudflare R2 + PicList Setup Guide](docs/cloudflare-r2-piclist-setup.md)
 
 ## Basic Usage
 
+Windows:
+
 ```powershell
 python scripts\publish_markdown_piclist.py --input "D:\path\to\article.md" --expected-url-prefix "https://pub-xxxx.r2.dev" --check-links --keep-staged
+```
+
+macOS / Linux:
+
+```bash
+python scripts/publish_markdown_piclist.py --input "/path/to/article.md" --expected-url-prefix "https://pub-xxxx.r2.dev" --check-links --keep-staged
 ```
 
 Successful output looks like:
@@ -126,7 +134,10 @@ python scripts\publish_markdown_piclist.py --input "D:\path\to\article.md" --end
 --endpoint              PicList upload endpoint. Default: http://127.0.0.1:36677/upload.
 --asset-root            Remote root path. Default: articles.
 --slug                  Article directory name under --asset-root.
---piclist-config        PicList data.json path. Defaults to %APPDATA%\piclist\data.json on Windows.
+--piclist-config        PicList data.json path. By default, the script auto-detects:
+                        macOS: ~/Library/Application Support/piclist/data.json
+                        Windows: %APPDATA%\piclist\data.json
+                        Linux: ~/.config/piclist/data.json
 --no-set-upload-path    Do not change PicList uploadPath; use current PicList config.
 --expected-url-prefix   Expected public image URL prefix, for example https://pub-xxxx.r2.dev.
 --check-links           Check returned public image URLs after upload.
@@ -173,6 +184,9 @@ If upload fails:
 - Check PicList's selected uploader.
 - Check Cloudflare R2 credentials and bucket settings.
 - Check the public URL prefix.
-- Inspect PicList logs, usually at `%APPDATA%\piclist\piclist.log` on Windows.
+- Inspect PicList logs:
+  - macOS: usually under `~/Library/Application Support/piclist/`
+  - Windows: usually under `%APPDATA%\piclist\`
+  - Linux: usually under `~/.config/piclist/`
 
 If generated image URLs do not open in a browser, do not import the Markdown into CSDN yet. Fix R2 public access or PicList custom URL settings first.
